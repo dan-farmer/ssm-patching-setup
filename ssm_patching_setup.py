@@ -15,6 +15,8 @@ def main():
     Register MW Tasks
     """
     args = parse_args()
+    ssm_client = boto3.client('ssm')
+    baseline_id = create_patch_baseline(ssm_client)
 
 def parse_args():
     """Create arguments and populate variables from args.
@@ -34,6 +36,54 @@ def create_patch_baseline(ssm_client):
 
     Return Baseline ID
     """
+    baseline = ssm_client.create_patch_baseline(
+        OperatingSystem='WINDOWS',
+        Name='Windows-0day-Important',
+        GlobalFilters={
+            'PatchFilters': [
+                {
+                    'Key': 'PRODUCT',
+                    'Values': [
+                        '*'
+                    ]
+                }
+            ]
+        },
+        ApprovalRules={
+            'PatchRules': [
+                {
+                    'PatchFilterGroup': {
+                        'PatchFilters': [
+                            {
+                                'Key': 'CLASSIFICATION',
+                                'Values': [
+                                    'CriticalUpdates',
+                                    'SecurityUpdates'
+                                ]
+                            },
+                            {
+                                'Key': 'MSRC_SEVERITY',
+                                'Values': [
+                                    'Important'
+                                ]
+                            }
+                        ]
+                    },
+                    'ComplianceLevel': 'UNSPECIFIED',
+                    'ApproveAfterDays': 0,
+                    'EnableNonSecurity': False
+                }
+            ]
+        },
+        ApprovedPatches=[],
+        ApprovedPatchesComplianceLevel='UNSPECIFIED',
+        ApprovedPatchesEnableNonSecurity=False,
+        RejectedPatches=[],
+        RejectedPatchesAction='ALLOW_AS_DEPENDENCY',
+        Description='Custom baseline with auto approval at 0 days and MSRC severity "Important"',
+        Sources=[]
+    )
+    return baseline['BaselineId']
 
 def register_baseline_patch_group(ssm_client, baseline_id, patch_group):
     """Register Patch Baseline for Patch Group."""
