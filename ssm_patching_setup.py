@@ -31,6 +31,7 @@ def main():
                     str(week), str(day), str(hour).zfill(2))
                 mw_name = "Week{0}Day{1}Unattended{2}00".format(
                     str(week), str(day), str(hour).zfill(2))
+                register_baseline_patch_group(ssm_client, baseline_id, patch_group)
 
 def parse_args():
     """Create arguments and populate variables from args.
@@ -106,6 +107,10 @@ def create_patch_baseline(ssm_client):
 
 def register_baseline_patch_group(ssm_client, baseline_id, patch_group):
     """Register Patch Baseline for Patch Group."""
+    # Relying on boto to raise an exception if this fails;
+    # This may need revisiting and custom error handling added
+    ssm_client.register_patch_baseline_for_patch_group(BaselineId=baseline_id,
+                                                       PatchGroup=patch_group)
 
 def create_maintenance_window(ssm_client, name, schedule, timezone):
     """Create Maintenance Window.
