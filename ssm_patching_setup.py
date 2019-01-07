@@ -19,8 +19,14 @@ def main():
 def parse_args():
     """Create arguments and populate variables from args.
 
-    Return args namespace"""
+    Return args namespace with 'weeks', 'days' and 'hours' lists"""
     parser = argparse.ArgumentParser()
+    parser.add_argument('-w', '--weeks', type=int, choices=range(1, 6), nargs='+', required=True,
+                        help='Weeks to create maintenance windows (Note: Not full week)')
+    parser.add_argument('-d', '--days', type=int, choices=range(0, 8), nargs='+', required=True,
+                        help='Days to create maintenance windows (0 = Sunday)')
+    parser.add_argument('-h', '--hours', type=int, choices=range(0, 24), nargs='+', required=True,
+                        help='Hours to create maintenance windows (0 = Midnight)')
     return parser.parse_args()
 
 def create_patch_baseline(ssm_client):
