@@ -3,6 +3,7 @@
 """Create SSM Patch Manager resources for simple automated patching use-cases."""
 
 import argparse
+import logging
 import calendar
 import boto3
 
@@ -16,6 +17,8 @@ def main():
     Register MW Tasks
     """
     args = parse_args()
+    if args.loglevel:
+        logging.basicConfig(level=args.loglevel)
     ssm_client = boto3.client('ssm')
     baseline_id = create_patch_baseline(ssm_client)
     # Set Day 0 == Sunday
@@ -40,6 +43,9 @@ def parse_args():
                         help='Days to create maintenance windows (0 = Sunday)')
     parser.add_argument('-t', '--hours', type=int, choices=range(0, 24), nargs='+', required=True,
                         help='Hours (time) to create maintenance windows (0 = Midnight)')
+    parser.add_argument('-l', '--loglevel', type=str, required=False,
+                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+                        help='Hours (time) to create maintenance windows (0 = Midnight)')
     return parser.parse_args()
 
 def create_patch_baseline(ssm_client):
@@ -47,6 +53,7 @@ def create_patch_baseline(ssm_client):
 
     Return Baseline ID
     """
+    logging.info('Creating Patch Baseline from inline defaults')
     baseline = ssm_client.create_patch_baseline(
         OperatingSystem='WINDOWS',
         Name='Windows-0day-Important',
@@ -94,6 +101,7 @@ def create_patch_baseline(ssm_client):
         Description='Custom baseline with auto approval at 0 days and MSRC severity "Important"',
         Sources=[]
     )
+    print("Created Patch Baseline {0}".format(baseline['BaselineId']))
     return baseline['BaselineId']
 
 def register_baseline_patch_group(ssm_client, baseline_id, patch_group):
