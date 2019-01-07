@@ -3,6 +3,7 @@
 """Create SSM Patch Manager resources for simple automated patching use-cases."""
 
 import argparse
+import calendar
 import boto3
 
 def main():
@@ -17,6 +18,16 @@ def main():
     args = parse_args()
     ssm_client = boto3.client('ssm')
     baseline_id = create_patch_baseline(ssm_client)
+    # Set Day 0 == Sunday
+    calendar.setfirstweekday(calendar.SUNDAY)
+    for week in args.weeks:
+        for day in args.days:
+            for hour in args.hours:
+                # String formatting for 'Patch Group' tag and Maintenance Window name
+                patch_group = "Week {0} Day {1} - Unattended - {2}:00".format(
+                    str(week), str(day), str(hour).zfill(2))
+                mw_name = "Week{0}Day{1}Unattended{2}00".format(
+                    str(week), str(day), str(hour).zfill(2))
 
 def parse_args():
     """Create arguments and populate variables from args.
@@ -27,8 +38,8 @@ def parse_args():
                         help='Weeks to create maintenance windows (Note: Not full week)')
     parser.add_argument('-d', '--days', type=int, choices=range(0, 8), nargs='+', required=True,
                         help='Days to create maintenance windows (0 = Sunday)')
-    parser.add_argument('-h', '--hours', type=int, choices=range(0, 24), nargs='+', required=True,
-                        help='Hours to create maintenance windows (0 = Midnight)')
+    parser.add_argument('-t', '--hours', type=int, choices=range(0, 24), nargs='+', required=True,
+                        help='Hours (time) to create maintenance windows (0 = Midnight)')
     return parser.parse_args()
 
 def create_patch_baseline(ssm_client):
