@@ -21,8 +21,6 @@ def main():
         logging.basicConfig(level=args.loglevel)
     ssm_client = boto3.client('ssm')
     baseline_id = create_patch_baseline(ssm_client)
-    # Set Day 0 == Sunday
-    calendar.setfirstweekday(calendar.SUNDAY)
     for week in args.weeks:
         for day in args.days:
             for hour in args.hours:
@@ -34,7 +32,7 @@ def main():
                     str(week), str(day), str(hour).zfill(2))
                 # String formatting for Maintenance Window cron schedule
                 mw_schedule = "cron(00 {2} ? * {1}#{0} *)".format(
-                    str(week), calendar.day_abbr[day].upper(), str(hour).zfill(2))
+                    str(week), calendar.day_abbr[day-1].upper(), str(hour).zfill(2))
                 # Default timezone; Will need parameterising
                 mw_timezone = "Europe/London"
                 register_baseline_patch_group(ssm_client, baseline_id, patch_group)
