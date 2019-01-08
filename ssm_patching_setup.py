@@ -26,12 +26,19 @@ def main():
     for week in args.weeks:
         for day in args.days:
             for hour in args.hours:
-                # String formatting for 'Patch Group' tag and Maintenance Window name
+                # String formatting for 'Patch Group' tag
                 patch_group = "Week {0} Day {1} - Unattended - {2}:00".format(
                     str(week), str(day), str(hour).zfill(2))
+                # String formatting for Maintenance Window name
                 mw_name = "Week{0}Day{1}Unattended{2}00".format(
                     str(week), str(day), str(hour).zfill(2))
+                # String formatting for Maintenance Window cron schedule
+                mw_schedule = "cron(00 {2} ? * {1}#{0} *)".format(
+                    str(week), calendar.day_abbr[day].upper(), str(hour).zfill(2))
+                # Default timezone; Will need parameterising
+                mw_timezone = "Europe/London"
                 register_baseline_patch_group(ssm_client, baseline_id, patch_group)
+                mw_id = create_maintenance_window(ssm_client, mw_name, mw_schedule, mw_timezone)
 
 def parse_args():
     """Create arguments and populate variables from args.
@@ -117,6 +124,16 @@ def create_maintenance_window(ssm_client, name, schedule, timezone):
 
     Return Maintenance Window ID
     """
+    logging.info('Creating Maintenance Window with schedule %s and timezone %s',
+                 schedule, timezone)
+    maintenance_window = ssm_client.create_maintenance_window(Name=name,
+                                                              Schedule=schedule,
+                                                              ScheduleTimezone=timezone,
+                                                              Duration=1,
+                                                              Cutoff=0,
+                                                              AllowUnassociatedTargets=True)
+    print("Created Maintenance Window {0}".format(maintenance_window['WindowId']))
+    return maintenance_window['WindowId']
 
 def register_patch_group_maintenance_window(ssm_client, mw_id, target_patch_group):
     """Register Patch Group as Maintenance Window Target.
