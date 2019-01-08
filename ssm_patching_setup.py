@@ -38,6 +38,7 @@ def main():
                 register_baseline_patch_group(ssm_client, baseline_id, patch_group)
                 mw_id = create_maintenance_window(ssm_client, mw_name, mw_schedule, mw_timezone)
                 target_id = register_patch_group_maintenance_window(ssm_client, mw_id, patch_group)
+                register_task(ssm_client, mw_id, target_id)
 
 def parse_args():
     """Create arguments and populate variables from args.
@@ -150,6 +151,18 @@ def register_patch_group_maintenance_window(ssm_client, mw_id, target_patch_grou
 
 def register_task(ssm_client, mw_id, target_id):
     """Register Task in Maintenance Window."""
+    logging.info('Registering Task for Target %s in Maintenance Window %s', target_id, mw_id)
+    targets = [{'Key': 'WindowTargetIds',
+                'Values': [target_id]}]
+    parameters = {'RunCommand': {'Parameters': {'Operation': ['Install']}}}
+    task = ssm_client.register_task_with_maintenance_window(WindowId=mw_id,
+                                                            Targets=targets,
+                                                            TaskArn='AWS-ApplyPatchBaseline',
+                                                            TaskType='RUN_COMMAND',
+                                                            TaskInvocationParameters=parameters,
+                                                            MaxConcurrency='2',
+                                                            MaxErrors='1')
+    print("Created Maintenance Window task {0}".format(task['WindowTaskId']))
 
 if __name__ == '__main__':
     main()
