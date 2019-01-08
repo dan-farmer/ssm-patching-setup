@@ -37,6 +37,7 @@ def main():
                 mw_timezone = "Europe/London"
                 register_baseline_patch_group(ssm_client, baseline_id, patch_group)
                 mw_id = create_maintenance_window(ssm_client, mw_name, mw_schedule, mw_timezone)
+                target_id = register_patch_group_maintenance_window(ssm_client, mw_id, patch_group)
 
 def parse_args():
     """Create arguments and populate variables from args.
@@ -138,6 +139,14 @@ def register_patch_group_maintenance_window(ssm_client, mw_id, target_patch_grou
 
     Return Target ID
     """
+    logging.info('Registering Patch Group %s as target for Maintenance Window %s',
+                 target_patch_group, mw_id)
+    target = {'Key': 'tag:Patch Group', 'Values': [target_patch_group]}
+    registration = ssm_client.register_target_with_maintenance_window(WindowId=mw_id,
+                                                                      ResourceType='INSTANCE',
+                                                                      Targets=[target])
+    print("Created Maintenance Window target {0}".format(registration['WindowTargetId']))
+    return registration['WindowTargetId']
 
 def register_task(ssm_client, mw_id, target_id):
     """Register Task in Maintenance Window."""
