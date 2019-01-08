@@ -34,7 +34,7 @@ def main():
                 mw_schedule = "cron(00 {2} ? * {1}#{0} *)".format(
                     str(week), calendar.day_abbr[day-1].upper(), str(hour).zfill(2))
                 # Default timezone; Will need parameterising
-                mw_timezone = "Europe/London"
+                mw_timezone = args.timezone
                 register_baseline_patch_group(ssm_client, baseline_id, patch_group)
                 mw_id = create_maintenance_window(ssm_client, mw_name, mw_schedule, mw_timezone)
                 target_id = register_patch_group_maintenance_window(ssm_client, mw_id, patch_group)
@@ -51,6 +51,8 @@ def parse_args():
                         help='Days to create maintenance windows (0 = Sunday)')
     parser.add_argument('-t', '--hours', type=int, choices=range(0, 24), nargs='+', required=True,
                         help='Hours (time) to create maintenance windows (0 = Midnight)')
+    parser.add_argument('-z', '--timezone', type=str, required=False, default='',
+                        help='Timezone for maintenance window schedules (TZ database name)')
     parser.add_argument('-l', '--loglevel', type=str, required=False,
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                         help='Hours (time) to create maintenance windows (0 = Midnight)')
