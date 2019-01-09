@@ -32,7 +32,8 @@ def main():
         logging.basicConfig(level=args.loglevel)
     ssm_client = boto3.client('ssm')
     for maintenance_window in get_maintenance_windows(ssm_client):
-        print(maintenance_window['WindowId'])
+        for task in get_maintenance_window_tasks(ssm_client, maintenance_window['WindowId']):
+            print(maintenance_window['WindowId'] + " :: " + task['WindowTaskId'])
 
 def parse_args():
     """Create arguments.
@@ -63,8 +64,23 @@ def get_maintenance_windows(ssm_client):
         for window in maint_window_list['WindowIdentities']:
             yield window
 
-def get_maintenance_window_tasks():
-    """."""
+def get_maintenance_window_tasks(ssm_client, maint_window_id):
+    """Yield Maintenance Window Tasks."""
+    next_token = True
+    while next_token:
+        if next_token is not True:
+            task_list = ssm_client.describe_maintenance_window_tasks(
+                WindowId=maint_window_id,
+                NextToken=next_token)
+        else:
+            task_list = ssm_client.describe_maintenance_window_tasks(
+                WindowId=maint_window_id)
+        if 'NextToken' in task_list:
+            next_token = task_list['NextToken']
+        else:
+            next_token = False
+        for task in task_list['Tasks']:
+            yield task
 
 def delete_task():
     """."""
