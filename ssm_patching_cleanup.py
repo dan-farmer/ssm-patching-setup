@@ -31,9 +31,20 @@ def main():
     if args.loglevel:
         logging.basicConfig(level=args.loglevel)
     ssm_client = boto3.client('ssm')
+
+    # Iterate through MWs & Tasks; Delete any Tasks that are patching
     for maintenance_window in get_maintenance_windows(ssm_client):
+        logging.info('Considering Maintenance Window %s', maintenance_window['WindowId'])
         for task in get_maintenance_window_tasks(ssm_client, maintenance_window['WindowId']):
-            print(maintenance_window['WindowId'] + " :: " + task['WindowTaskId'])
+            logging.info('Considering Task %s', task['WindowTaskId'])
+            if ((task['TaskArn'] == 'AWS-ApplyPatchBaseline') or
+                    (task['TaskArn'] == 'AWS-RunPatchBaseline')):
+                logging.info('Task %s has TaskArn %s, deleting',
+                             task['WindowTaskId'], task['TaskArn'])
+                delete_task(ssm_client, maintenance_window['WindowId'], task['WindowTaskId'])
+            else:
+                logging.info('Task %s has TaskArn %s',
+                             task['WindowTaskId'], task['TaskArn'])
 
 def parse_args():
     """Create arguments.
@@ -82,8 +93,15 @@ def get_maintenance_window_tasks(ssm_client, maint_window_id):
         for task in task_list['Tasks']:
             yield task
 
-def delete_task():
-    """."""
+def delete_task(ssm_client, maint_window_id, task_id):
+    """Delete Maintenance Window Task."""
+    response = ssm_client.deregister_task_from_maintenance_window(WindowId=maint_window_id,
+                                                                  WindowTaskId=task_id)
+    if response['WindowTaskId']:
+        print("Deregistered Task {0} from Maintenance Window {1}".format(task_id, maint_window_id))
+    else:
+        logging.error('Failed to deregister Task %s from Maintenance Window %s',
+                      task_id, maint_window_id)
 
 def delete_maintenance_window():
     """."""
