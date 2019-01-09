@@ -32,11 +32,13 @@ def main():
         logging.basicConfig(level=args.loglevel)
     ssm_client = boto3.client('ssm')
 
-    # Iterate through MWs & Tasks; Delete any Tasks that are patching
+    # Iterate through Maintenance Windows
     for maintenance_window in get_maintenance_windows(ssm_client):
         logging.info('Considering Maintenance Window %s', maintenance_window['WindowId'])
+        # Iterate through Tasks
         for task in get_maintenance_window_tasks(ssm_client, maintenance_window['WindowId']):
             logging.info('Considering Task %s', task['WindowTaskId'])
+            # If TaskArn is one of the AWS-supplied SSM Patch Manager tasks, delete it
             if ((task['TaskArn'] == 'AWS-ApplyPatchBaseline') or
                     (task['TaskArn'] == 'AWS-RunPatchBaseline')):
                 logging.info('Task %s has TaskArn %s, deleting',
@@ -45,12 +47,20 @@ def main():
             else:
                 logging.info('Task %s has TaskArn %s',
                              task['WindowTaskId'], task['TaskArn'])
+        # Re-fetch the Tasks for this Maintenance Window
         tasks = get_maintenance_window_tasks(ssm_client, maintenance_window['WindowId'])
         tasks_number = sum(1 for task in tasks)
         logging.info('Number of tasks remaining for Maintenance Window %s: %s',
                      maintenance_window['WindowId'], tasks_number)
+        # If no Tasks remain for this Maintenance Window, delete it
         if tasks_number == 0:
             delete_maintenance_window(ssm_client, maintenance_window['WindowId'])
+
+    # Iterate through Patch Groups; Deregister baselines
+    for patch_group in get_patch_groups(ssm_client):
+        deregister_baseline(ssm_client,
+                            patch_group['PatchGroup'],
+                            patch_group['BaselineIdentity']['BaselineId'])
 
 def parse_args():
     """Create arguments.
@@ -117,8 +127,29 @@ def delete_maintenance_window(ssm_client, maint_window_id):
     else:
         logging.error('Failed to delete Maintenance Window %s', maint_window_id)
 
-def deregister_baseline():
-    """."""
+def get_patch_groups(ssm_client):
+    """Yield Patch Groups."""
+    next_token = True
+    while next_token:
+        if next_token is not True:
+            patch_group_list = ssm_client.describe_patch_groups(NextToken=next_token)
+        else:
+            patch_group_list = ssm_client.describe_patch_groups()
+        if 'NextToken' in patch_group_list:
+            next_token = patch_group_list['NextToken']
+        else:
+            next_token = False
+        for patch_group in patch_group_list['Mappings']:
+            yield patch_group
+
+def deregister_baseline(ssm_client, patch_group, baseline):
+    """Deregister Baseline for Patch Group."""
+    response = ssm_client.deregister_patch_baseline_for_patch_group(BaselineId=baseline,
+                                                                    PatchGroup=patch_group)
+    if response['PatchGroup']:
+        print("Deregistered Baseline {0} for Patch Group {1}".format(baseline, patch_group))
+    else:
+        logging.error('Failed to deregister Baseline %s for Patch Group %s', baseline, patch_group)
 
 def get_baselines():
     """."""
