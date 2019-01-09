@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+#
+# Author: Dan Farmer
+# License: GPL3
+#   See the "LICENSE" file for full details
 
 """Create SSM Patch Manager resources for simple automated patching use-cases."""
 
