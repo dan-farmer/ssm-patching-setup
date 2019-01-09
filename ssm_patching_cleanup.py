@@ -62,6 +62,16 @@ def main():
                             patch_group['PatchGroup'],
                             patch_group['BaselineIdentity']['BaselineId'])
 
+    # Iterate through Baselines
+    for baseline in get_baselines(ssm_client):
+        logging.info('Considering Patch Baseline %s', baseline['BaselineId'])
+        # If this is not a Default Baseline, delete it
+        if not baseline['DefaultBaseline']:
+            logging.info('Baseline %s is not a Default Baseline, deleting', baseline['BaselineId'])
+            delete_baseline(ssm_client, baseline['BaselineId'])
+        else:
+            logging.info('Baseline %s is a Default Baseline', baseline['BaselineId'])
+
 def parse_args():
     """Create arguments.
 
@@ -151,11 +161,28 @@ def deregister_baseline(ssm_client, patch_group, baseline):
     else:
         logging.error('Failed to deregister Baseline %s for Patch Group %s', baseline, patch_group)
 
-def get_baselines():
-    """."""
+def get_baselines(ssm_client):
+    """Yield Patch Baselines."""
+    next_token = True
+    while next_token:
+        if next_token is not True:
+            baseline_list = ssm_client.describe_patch_baselines(NextToken=next_token)
+        else:
+            baseline_list = ssm_client.describe_patch_baselines()
+        if 'NextToken' in baseline_list:
+            next_token = baseline_list['NextToken']
+        else:
+            next_token = False
+        for baseline in baseline_list['BaselineIdentities']:
+            yield baseline
 
-def delete_baseline():
-    """."""
+def delete_baseline(ssm_client, baseline):
+    """Delete a Patch Baseline."""
+    response = ssm_client.delete_patch_baseline(BaselineId=baseline)
+    if response['BaselineId']:
+        print("Deleted Patch Baseline {0}".format(baseline))
+    else:
+        logging.error('Failed to delete Patch Baseline %s', baseline)
 
 if __name__ == '__main__':
     main()
