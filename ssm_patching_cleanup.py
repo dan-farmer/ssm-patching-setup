@@ -27,9 +27,19 @@ def main():
     Deregister Baseline for Patch Groups
     Iterate through Patch Baselines
     Delete non-default Baselines"""
+    args = parse_args()
+    if args.loglevel:
+        logging.basicConfig(level=args.loglevel)
 
 def parse_args():
-    """."""
+    """Create arguments.
+
+    Return args namespace"""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--loglevel', type=str, required=False,
+                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+                        help='Output logging verbosity')
+    return parser.parse_args()
 
 def get_maintenance_windows():
     """."""
