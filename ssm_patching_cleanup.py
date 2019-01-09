@@ -30,6 +30,9 @@ def main():
     args = parse_args()
     if args.loglevel:
         logging.basicConfig(level=args.loglevel)
+    ssm_client = boto3.client('ssm')
+    for maintenance_window in get_maintenance_windows(ssm_client):
+        print(maintenance_window['WindowId'])
 
 def parse_args():
     """Create arguments.
@@ -41,8 +44,24 @@ def parse_args():
                         help='Output logging verbosity')
     return parser.parse_args()
 
-def get_maintenance_windows():
-    """."""
+def get_maintenance_windows(ssm_client):
+    """Yield SSM Maintenance Windows."""
+    next_token = True
+    filters = {'Key':'Enabled', 'Values':['true']}
+    while next_token:
+        if next_token is not True:
+            maint_window_list = ssm_client.describe_maintenance_windows(
+                Filters=[filters],
+                NextToken=next_token)
+        else:
+            maint_window_list = ssm_client.describe_maintenance_windows(
+                Filters=[filters])
+        if 'NextToken' in maint_window_list:
+            next_token = maint_window_list['NextToken']
+        else:
+            next_token = False
+        for window in maint_window_list['WindowIdentities']:
+            yield window
 
 def get_maintenance_window_tasks():
     """."""
