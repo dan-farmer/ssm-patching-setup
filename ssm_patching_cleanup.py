@@ -45,6 +45,12 @@ def main():
             else:
                 logging.info('Task %s has TaskArn %s',
                              task['WindowTaskId'], task['TaskArn'])
+        tasks = get_maintenance_window_tasks(ssm_client, maintenance_window['WindowId'])
+        tasks_number = sum(1 for task in tasks)
+        logging.info('Number of tasks remaining for Maintenance Window %s: %s',
+                     maintenance_window['WindowId'], tasks_number)
+        if tasks_number == 0:
+            delete_maintenance_window(ssm_client, maintenance_window['WindowId'])
 
 def parse_args():
     """Create arguments.
@@ -103,8 +109,13 @@ def delete_task(ssm_client, maint_window_id, task_id):
         logging.error('Failed to deregister Task %s from Maintenance Window %s',
                       task_id, maint_window_id)
 
-def delete_maintenance_window():
-    """."""
+def delete_maintenance_window(ssm_client, maint_window_id):
+    """Delete Maintenance Window."""
+    response = ssm_client.delete_maintenance_window(WindowId=maint_window_id)
+    if response['WindowId']:
+        print("Deleted Maintenance Window {0}".format(maint_window_id))
+    else:
+        logging.error('Failed to delete Maintenance Window %s', maint_window_id)
 
 def deregister_baseline():
     """."""
