@@ -115,15 +115,21 @@ def create_patch_baseline(ssm_client):
         Description='Custom baseline with auto approval at 0 days and MSRC severity "Important"',
         Sources=[]
     )
-    print("Created Patch Baseline {0}".format(baseline['BaselineId']))
+    if baseline['BaselineId']:
+        print("Created Patch Baseline {0}".format(baseline['BaselineId']))
+    else:
+        raise Exception('Failed to create Patch Baseline')
     return baseline['BaselineId']
 
 def register_baseline_patch_group(ssm_client, baseline_id, patch_group):
     """Register Patch Baseline for Patch Group."""
-    # Relying on boto to raise an exception if this fails;
-    # This may need revisiting and custom error handling added
-    ssm_client.register_patch_baseline_for_patch_group(BaselineId=baseline_id,
-                                                       PatchGroup=patch_group)
+    response = ssm_client.register_patch_baseline_for_patch_group(BaselineId=baseline_id,
+                                                                  PatchGroup=patch_group)
+    if response['PatchGroup']:
+        print('Registered Patch Baseline {0} for Patch Group {1}'.format(baseline_id, patch_group))
+    else:
+        logging.warning('Failed to register Patch Baseline %s for Patch Group %s',
+                        baseline_id, patch_group)
 
 def create_maintenance_window(ssm_client, name, schedule, timezone):
     """Create Maintenance Window.
@@ -138,7 +144,10 @@ def create_maintenance_window(ssm_client, name, schedule, timezone):
                                                               Duration=1,
                                                               Cutoff=0,
                                                               AllowUnassociatedTargets=True)
-    print("Created Maintenance Window {0}".format(maintenance_window['WindowId']))
+    if maintenance_window['WindowId']:
+        print("Created Maintenance Window {0}".format(maintenance_window['WindowId']))
+    else:
+        raise Exception('Failed to created Maintenance Window for schedule {0}'.format(schedule))
     return maintenance_window['WindowId']
 
 def register_patch_group_maintenance_window(ssm_client, mw_id, target_patch_group):
@@ -152,7 +161,11 @@ def register_patch_group_maintenance_window(ssm_client, mw_id, target_patch_grou
     registration = ssm_client.register_target_with_maintenance_window(WindowId=mw_id,
                                                                       ResourceType='INSTANCE',
                                                                       Targets=[target])
-    print("Created Maintenance Window target {0}".format(registration['WindowTargetId']))
+    if registration['WindowTargetId']:
+        print("Created Maintenance Window target {0}".format(registration['WindowTargetId']))
+    else:
+        raise Exception('Failed to register Patch Group {0} as Maintenance Window Target'.format(
+            target_patch_group))
     return registration['WindowTargetId']
 
 def register_task(ssm_client, mw_id, target_id):
@@ -168,7 +181,11 @@ def register_task(ssm_client, mw_id, target_id):
                                                             TaskInvocationParameters=parameters,
                                                             MaxConcurrency='2',
                                                             MaxErrors='1')
-    print("Created Maintenance Window task {0}".format(task['WindowTaskId']))
+    if task['WindowTaskId']:
+        print("Created Maintenance Window task {0}".format(task['WindowTaskId']))
+    else:
+        logging.warning('Failed to register Task for Target %s in Maintenance Window %s',
+                        target_id, mw_id)
 
 if __name__ == '__main__':
     main()
