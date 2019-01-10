@@ -37,7 +37,6 @@ def main():
                 # String formatting for Maintenance Window cron schedule
                 mw_schedule = "cron(00 {2} ? * {1}#{0} *)".format(
                     str(week), calendar.day_abbr[day-1].upper(), str(hour).zfill(2))
-                # Default timezone; Will need parameterising
                 mw_timezone = args.timezone
                 register_baseline_patch_group(ssm_client, baseline_id, patch_group)
                 mw_id = create_maintenance_window(ssm_client, mw_name, mw_schedule, mw_timezone)
@@ -47,7 +46,7 @@ def main():
 def parse_args():
     """Create arguments and populate variables from args.
 
-    Return args namespace with 'weeks', 'days' and 'hours' lists"""
+    Return args namespace"""
     parser = argparse.ArgumentParser()
     parser.add_argument('-w', '--weeks', type=int, choices=range(1, 6), nargs='+', required=True,
                         help='Weeks to create maintenance windows (Note: Not full week)')
