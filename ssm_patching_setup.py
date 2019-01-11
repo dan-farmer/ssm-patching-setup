@@ -10,21 +10,30 @@ import argparse
 import logging
 import calendar
 import boto3
+from helpers import get_valid_region
 
 def main():
     """Create SSM Patch Manager resources.
 
+    Parse arguments
+    Establish region
     Create Patch Baseline
     Register Baseline for Patch Groups
     Create Maintenance Windows
     Register Patch Groups to MWs
     Register MW Tasks
     """
+
     args = parse_args()
     if args.loglevel:
         logging.basicConfig(level=args.loglevel)
-    ssm_client = boto3.client('ssm')
+    region = get_valid_region(args.region)
+
+    logging.info('Using region %s', region)
+    ssm_client = boto3.client('ssm', region_name=region)
+
     baseline_id = create_patch_baseline(ssm_client)
+
     for week in args.weeks:
         for day in args.days:
             for hour in args.hours:
@@ -56,6 +65,7 @@ def parse_args():
                         help='Hours (time) to create maintenance windows (0 = Midnight)')
     parser.add_argument('-z', '--timezone', type=str, default='',
                         help='Timezone for maintenance window schedules (TZ database name)')
+    parser.add_argument('-r', '--region', type=str, help='AWS region', default=False)
     parser.add_argument('-l', '--loglevel', type=str,
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                         help='Logging/output verbosity')

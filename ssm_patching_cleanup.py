@@ -14,11 +14,13 @@
 import argparse
 import logging
 import boto3
+from helpers import get_valid_region
 
 def main():
     """Delete SSM Patch Manager resources.
 
     Parse command-line arguments
+    Establish region
     Iterate through Maintenance Windows
     Iterate through Tasks
     Delete patching-specific Tasks
@@ -27,10 +29,15 @@ def main():
     Deregister Baseline for Patch Groups
     Iterate through Patch Baselines
     Delete non-default Baselines"""
+
     args = parse_args()
+
     if args.loglevel:
         logging.basicConfig(level=args.loglevel)
-    ssm_client = boto3.client('ssm')
+    region = get_valid_region(args.region)
+
+    logging.info('Using region %s', region)
+    ssm_client = boto3.client('ssm', region_name=region)
 
     # Iterate through Maintenance Windows
     for maintenance_window in get_maintenance_windows(ssm_client):
@@ -77,6 +84,7 @@ def parse_args():
 
     Return args namespace"""
     parser = argparse.ArgumentParser()
+    parser.add_argument('-r', '--region', type=str, help='AWS region', default=False)
     parser.add_argument('-l', '--loglevel', type=str, required=False,
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                         help='Logging/output verbosity')

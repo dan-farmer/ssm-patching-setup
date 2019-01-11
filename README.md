@@ -3,10 +3,9 @@ Automated creation of AWS SSM Patch Manager resources for simple automated patch
 
 ## Usage
 ```
-export AWS_DEFAULT_REGION=foo
-export AWS_ACCESS_KEY_ID=bar
-export AWS_SECRET_ACCESS_KEY=baz
-export AWS_SESSION_TOKEN=qux
+export AWS_ACCESS_KEY_ID=foo
+export AWS_SECRET_ACCESS_KEY=bar
+export AWS_SESSION_TOKEN=baz
 ./ssm_patching_setup.py
 ```
 The defaults will create 8 Maintenance Windows. In human terms, these are:
@@ -27,8 +26,22 @@ Optional parameters to control the Maintenance Window schedules and other option
 | -d           | --days      | 2 3      | Tue, Wed |
 | -t           | --hours     | 3 4      | 03:00, 04:00 |
 | -z           | --timezone  |          | Use tzdata zones |
+| -r           | --region    | [See note below](#Region) | Short region alias (e.g. 'us-east-1') |
 | -h           | --help      |          |       |
 | -l           | --loglevel  |          | DEBUG, INFO, WARNING, ERROR, CRITICAL |
+
+### Authentication
+By design, these scripts do not handle authentication. Use one of the following methods for authentication with the AWS APIs:
+1. [AWS Environment variables](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#environment-variables)
+1. [AWS Credentials file](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#shared-credentials-file)
+1. [AWS Config file](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#aws-config-file)
+1. Wrap around or customise the scripts
+
+### Region
+If region is not specified, the script will attempt to proceed with the user's default region configured for the AWS SDK:
+1. [AWS Environment variables](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#environment-variable-configuration)
+1. [AWS Credentials file](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#shared-credentials-file)
+1. [AWS Config file](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#aws-config-file)
 
 ### Week
 It's important to note that the week is specified as (for example) 'the second week of the month' and not 'the second full week'; That is to say, the Maintenance Window schedule is specified as 'the second Tuesday of the month' and not 'the Tuesday of the second full week of the month'.
@@ -36,7 +49,7 @@ It's important to note that the week is specified as (for example) 'the second w
 The practical implications of this are that Maintenance Windows for 'week 1' will always occur before 'week 2', but 'Tuesday, week 1' might occur after 'Wednesday, week 1'.
 
 ## Cleanup
-`ssm_patching_cleanup.py` will destroy all SSM Patch Manager resources in the current region:
+`ssm_patching_cleanup.py` will destroy all SSM Patch Manager resources in the region:
 * All Maintenance Window Tasks for `AWS-ApplyPatchBaseline` or `AWS-RunPatchBaseline`
 * All Maintenance Windows with no tasks or only patching tasks as above
 * All Patch Baseline registrations for Patch Groups
