@@ -27,6 +27,7 @@ Optional parameters to control the Maintenance Window schedules and other option
 | -t           | --hours     | 3 4      | 03:00, 04:00 |
 | -z           | --timezone  |          | Use tzdata zones |
 | -r           | --region    | [See note below](#Region) | Short region alias (e.g. 'us-east-1') |
+| -b           | --baseline-file |      | REQUIRED; [See note below](#baseline-file) |
 | -h           | --help      |          |       |
 | -l           | --loglevel  |          | DEBUG, INFO, WARNING, ERROR, CRITICAL |
 
@@ -42,6 +43,9 @@ If region is not specified, the script will attempt to proceed with the user's d
 1. [AWS Environment variables](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#environment-variable-configuration)
 1. [AWS Credentials file](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#shared-credentials-file)
 1. [AWS Config file](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#aws-config-file)
+
+### Baseline File
+A JSON-formatted file containing the properties of the baseline to create is required. See the [baselines](baselines) directory for samples/examples.
 
 ### Week
 It's important to note that the week is specified as (for example) 'the second week of the month' and not 'the second full week'; That is to say, the Maintenance Window schedule is specified as 'the second Tuesday of the month' and not 'the Tuesday of the second full week of the month'.
