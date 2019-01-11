@@ -63,7 +63,7 @@ def parse_args():
                         help='Days to create maintenance windows (0 = Sunday)')
     parser.add_argument('-t', '--hours', type=int, choices=range(0, 24), nargs='+', default=[3, 4],
                         help='Hours (time) to create maintenance windows (0 = Midnight)')
-    parser.add_argument('-z', '--timezone', type=str, default='',
+    parser.add_argument('-z', '--timezone', type=str, default=False,
                         help='Timezone for maintenance window schedules (TZ database name)')
     parser.add_argument('-r', '--region', type=str, help='AWS region', default=False)
     parser.add_argument('-l', '--loglevel', type=str,
@@ -145,14 +145,22 @@ def create_maintenance_window(ssm_client, name, schedule, timezone):
 
     Return Maintenance Window ID
     """
-    logging.info('Creating Maintenance Window with schedule %s and timezone %s',
-                 schedule, timezone)
-    maintenance_window = ssm_client.create_maintenance_window(Name=name,
-                                                              Schedule=schedule,
-                                                              ScheduleTimezone=timezone,
-                                                              Duration=1,
-                                                              Cutoff=0,
-                                                              AllowUnassociatedTargets=True)
+    if timezone:
+        logging.info('Creating Maintenance Window with schedule %s and timezone %s',
+                     schedule, timezone)
+        maintenance_window = ssm_client.create_maintenance_window(Name=name,
+                                                                  Schedule=schedule,
+                                                                  ScheduleTimezone=timezone,
+                                                                  Duration=1,
+                                                                  Cutoff=0,
+                                                                  AllowUnassociatedTargets=True)
+    else:
+        logging.info('Creating Maintenance Window with schedule %s', schedule)
+        maintenance_window = ssm_client.create_maintenance_window(Name=name,
+                                                                  Schedule=schedule,
+                                                                  Duration=1,
+                                                                  Cutoff=0,
+                                                                  AllowUnassociatedTargets=True)
     if maintenance_window['WindowId']:
         print("Created Maintenance Window {0}".format(maintenance_window['WindowId']))
     else:
