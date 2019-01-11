@@ -48,15 +48,15 @@ def parse_args():
 
     Return args namespace"""
     parser = argparse.ArgumentParser()
-    parser.add_argument('-w', '--weeks', type=int, choices=range(1, 6), nargs='+', required=True,
+    parser.add_argument('-w', '--weeks', type=int, choices=range(1, 6), nargs='+', default=[1, 2],
                         help='Weeks to create maintenance windows (Note: Not full week)')
-    parser.add_argument('-d', '--days', type=int, choices=range(0, 8), nargs='+', required=True,
+    parser.add_argument('-d', '--days', type=int, choices=range(0, 8), nargs='+', default=[2, 3],
                         help='Days to create maintenance windows (0 = Sunday)')
-    parser.add_argument('-t', '--hours', type=int, choices=range(0, 24), nargs='+', required=True,
+    parser.add_argument('-t', '--hours', type=int, choices=range(0, 24), nargs='+', default=[3, 4],
                         help='Hours (time) to create maintenance windows (0 = Midnight)')
-    parser.add_argument('-z', '--timezone', type=str, required=False, default='',
+    parser.add_argument('-z', '--timezone', type=str, default='',
                         help='Timezone for maintenance window schedules (TZ database name)')
-    parser.add_argument('-l', '--loglevel', type=str, required=False,
+    parser.add_argument('-l', '--loglevel', type=str,
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                         help='Hours (time) to create maintenance windows (0 = Midnight)')
     return parser.parse_args()
