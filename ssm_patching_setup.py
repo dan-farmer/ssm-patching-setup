@@ -58,7 +58,7 @@ def parse_args():
                         help='Timezone for maintenance window schedules (TZ database name)')
     parser.add_argument('-l', '--loglevel', type=str,
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-                        help='Hours (time) to create maintenance windows (0 = Midnight)')
+                        help='Logging/output verbosity')
     return parser.parse_args()
 
 def create_patch_baseline(ssm_client):

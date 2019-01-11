@@ -28,6 +28,7 @@ Optional parameters to control the Maintenance Window schedules and other option
 | -t           | --hours     | 3 4      | 03:00, 04:00 |
 | -z           | --timezone  |          | Use tzdata zones |
 | -h           | --help      |          |       |
+| -l           | --loglevel  |          | DEBUG, INFO, WARNING, ERROR, CRITICAL |
 
 ### Week
 It's important to note that the week is specified as (for example) 'the second week of the month' and not 'the second full week'; That is to say, the Maintenance Window schedule is specified as 'the second Tuesday of the month' and not 'the Tuesday of the second full week of the month'.

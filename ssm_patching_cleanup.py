@@ -79,7 +79,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--loglevel', type=str, required=False,
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-                        help='Output logging verbosity')
+                        help='Logging/output verbosity')
     return parser.parse_args()
 
 def get_maintenance_windows(ssm_client):
