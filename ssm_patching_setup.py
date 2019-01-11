@@ -9,6 +9,7 @@
 import argparse
 import logging
 import calendar
+import json
 import boto3
 from helpers import get_valid_region
 
@@ -32,7 +33,7 @@ def main():
     logging.info('Using region %s', region)
     ssm_client = boto3.client('ssm', region_name=region)
 
-    baseline_id = create_patch_baseline(ssm_client)
+    baseline_id = create_patch_baseline(ssm_client,args.baseline_file)
 
     for week in args.weeks:
         for day in args.days:
@@ -66,64 +67,23 @@ def parse_args():
     parser.add_argument('-z', '--timezone', type=str, default=False,
                         help='Timezone for maintenance window schedules (TZ database name)')
     parser.add_argument('-r', '--region', type=str, help='AWS region', default=False)
+    parser.add_argument('-b', '--baseline-file', type=str, required=True,
+                        help='File containing Patch Baseline properties')
     parser.add_argument('-l', '--loglevel', type=str,
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                         help='Logging/output verbosity')
     return parser.parse_args()
 
-def create_patch_baseline(ssm_client):
+def create_patch_baseline(ssm_client,baseline_file):
     """Create Patch Baseline.
 
     Return Baseline ID
     """
-    logging.info('Creating Patch Baseline from inline defaults')
-    baseline = ssm_client.create_patch_baseline(
-        OperatingSystem='WINDOWS',
-        Name='Windows-0day-Important',
-        GlobalFilters={
-            'PatchFilters': [
-                {
-                    'Key': 'PRODUCT',
-                    'Values': [
-                        '*'
-                    ]
-                }
-            ]
-        },
-        ApprovalRules={
-            'PatchRules': [
-                {
-                    'PatchFilterGroup': {
-                        'PatchFilters': [
-                            {
-                                'Key': 'CLASSIFICATION',
-                                'Values': [
-                                    'CriticalUpdates',
-                                    'SecurityUpdates'
-                                ]
-                            },
-                            {
-                                'Key': 'MSRC_SEVERITY',
-                                'Values': [
-                                    'Important'
-                                ]
-                            }
-                        ]
-                    },
-                    'ComplianceLevel': 'UNSPECIFIED',
-                    'ApproveAfterDays': 0,
-                    'EnableNonSecurity': False
-                }
-            ]
-        },
-        ApprovedPatches=[],
-        ApprovedPatchesComplianceLevel='UNSPECIFIED',
-        ApprovedPatchesEnableNonSecurity=False,
-        RejectedPatches=[],
-        RejectedPatchesAction='ALLOW_AS_DEPENDENCY',
-        Description='Custom baseline with auto approval at 0 days and MSRC severity "Important"',
-        Sources=[]
-    )
+    logging.info('Creating Patch Baseline from file %s', baseline_file)
+    # Let natural exception be raised if the file cannot be read
+    with open(baseline_file, "r") as baseline_file_handle:
+        baseline_data = json.load(baseline_file_handle)
+    baseline = ssm_client.create_patch_baseline(**baseline_data)
     if baseline['BaselineId']:
         print("Created Patch Baseline {0}".format(baseline['BaselineId']))
     else:
