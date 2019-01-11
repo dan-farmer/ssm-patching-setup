@@ -1,0 +1,33 @@
+{
+    "Name": "AWS-CentOSDefaultPatchBaseline",
+    "OperatingSystem": "CENTOS",
+    "GlobalFilters": {
+        "PatchFilters": []
+    },
+    "ApprovalRules": {
+        "PatchRules": [
+            {
+                "PatchFilterGroup": {
+                    "PatchFilters": [
+                        {
+                            "Key": "PRODUCT",
+                            "Values": [
+                                "*"
+                            ]
+                        }
+                    ]
+                },
+                "ComplianceLevel": "UNSPECIFIED",
+                "ApproveAfterDays": 7,
+                "EnableNonSecurity": true
+            }
+        ]
+    },
+    "ApprovedPatches": [],
+    "ApprovedPatchesComplianceLevel": "UNSPECIFIED",
+    "ApprovedPatchesEnableNonSecurity": false,
+    "RejectedPatches": [],
+    "RejectedPatchesAction": "ALLOW_AS_DEPENDENCY",
+    "PatchGroups": [],
+    "Sources": []
+}
