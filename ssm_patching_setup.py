@@ -33,7 +33,7 @@ def main():
     logging.info('Using region %s', region)
     ssm_client = boto3.client('ssm', region_name=region)
 
-    baseline_id = create_patch_baseline(ssm_client,args.baseline_file)
+    baseline_id = create_patch_baseline(ssm_client, args.baseline_file)
 
     for week in args.weeks:
         for day in args.days:
@@ -74,7 +74,7 @@ def parse_args():
                         help='Logging/output verbosity')
     return parser.parse_args()
 
-def create_patch_baseline(ssm_client,baseline_file):
+def create_patch_baseline(ssm_client, baseline_file):
     """Create Patch Baseline.
 
     Return Baseline ID
