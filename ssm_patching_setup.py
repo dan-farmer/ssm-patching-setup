@@ -11,7 +11,7 @@ import logging
 import calendar
 import json
 import boto3
-from helpers import get_valid_region
+from helpers import get_region
 
 def main():
     """Create SSM Patch Manager resources.
@@ -28,7 +28,7 @@ def main():
     args = parse_args()
     if args.loglevel:
         logging.basicConfig(level=args.loglevel)
-    region = get_valid_region(args.region)
+    region = get_region(args.region)
 
     logging.info('Using region %s', region)
     ssm_client = boto3.client('ssm', region_name=region)
