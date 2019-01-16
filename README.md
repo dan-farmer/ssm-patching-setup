@@ -6,7 +6,7 @@ Automated creation of AWS SSM Patch Manager resources for simple automated patch
 export AWS_ACCESS_KEY_ID=foo
 export AWS_SECRET_ACCESS_KEY=bar
 export AWS_SESSION_TOKEN=baz
-./ssm_patching_setup.py
+./ssm_patching_setup.py -b BASELINE_FILE
 ```
 The defaults will create 8 Maintenance Windows. In human terms, these are:
 * 03:00, first Tuesday of the month
