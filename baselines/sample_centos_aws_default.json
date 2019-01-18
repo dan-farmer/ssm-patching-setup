@@ -28,6 +28,5 @@
     "ApprovedPatchesEnableNonSecurity": false,
     "RejectedPatches": [],
     "RejectedPatchesAction": "ALLOW_AS_DEPENDENCY",
-    "PatchGroups": [],
     "Sources": []
 }

@@ -1,5 +1,4 @@
 {
-    "BaselineId": "arn:aws:ssm:eu-central-1:416089608788:patchbaseline/pb-0af17a967557961db",
     "Name": "AWS-DefaultPatchBaseline",
     "OperatingSystem": "WINDOWS",
     "GlobalFilters": {
@@ -44,9 +43,6 @@
     "ApprovedPatchesEnableNonSecurity": false,
     "RejectedPatches": [],
     "RejectedPatchesAction": "ALLOW_AS_DEPENDENCY",
-    "PatchGroups": [],
-    "CreatedDate": 1525108559.057,
-    "ModifiedDate": 1525108559.057,
     "Description": "Default Patch Baseline Provided by AWS.",
     "Sources": []
 }
