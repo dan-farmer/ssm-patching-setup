@@ -30,6 +30,23 @@ def get_region(proposed_region):
             raise Exception('Could not establish region. Specify -r or configure AWS_CREDENTIALS')
     return region
 
+def get_items(client, function, item_name, **args):
+    """Generic paginator.
+
+    Yield items in client.function(args)['item_name']
+    """
+    # Used because botocore is still missing many documented paginators
+    # See: https://github.com/boto/botocore/issues/1462
+    response = getattr(client, function)(**args)
+    while response:
+        for item in response[item_name]:
+            yield item
+        if 'NextToken' in response:
+            # If there are more items, re-query with returned NextToken
+            response = getattr(client, function)(NextToken=response['NextToken'], **args)
+        else:
+            response = None
+
 def get_region_list():
     """Return list of AWS regions."""
     try:

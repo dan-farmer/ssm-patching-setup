@@ -14,7 +14,7 @@
 import argparse
 import logging
 import boto3
-from helpers import get_region
+import helpers
 
 def main():
     """Delete SSM Patch Manager resources.
@@ -34,43 +34,57 @@ def main():
 
     if args.loglevel:
         logging.basicConfig(level=args.loglevel)
-    region = get_region(args.region)
+    region = helpers.get_region(args.region)
 
     logging.info('Using region %s', region)
     ssm_client = boto3.client('ssm', region_name=region)
 
     # Iterate through Maintenance Windows
-    for maintenance_window in get_maintenance_windows(ssm_client):
-        logging.info('Considering Maintenance Window %s', maintenance_window['WindowId'])
+    mw_enabled_filter = {'Key':'Enabled', 'Values':['true']}
+    for maint_window in helpers.get_items(client=ssm_client,
+                                          function='describe_maintenance_windows',
+                                          item_name='WindowIdentities',
+                                          Filters=[mw_enabled_filter]):
+        logging.info('Considering Maintenance Window %s', maint_window['WindowId'])
         # Iterate through Tasks
-        for task in get_maintenance_window_tasks(ssm_client, maintenance_window['WindowId']):
+        for task in helpers.get_items(client=ssm_client,
+                                      function='describe_maintenance_window_tasks',
+                                      item_name='Tasks',
+                                      WindowId=maint_window['WindowId']):
             logging.info('Considering Task %s', task['WindowTaskId'])
             # If TaskArn is one of the AWS-supplied SSM Patch Manager tasks, delete it
             if ((task['TaskArn'] == 'AWS-ApplyPatchBaseline') or
                     (task['TaskArn'] == 'AWS-RunPatchBaseline')):
                 logging.info('Task %s has TaskArn %s, deleting',
                              task['WindowTaskId'], task['TaskArn'])
-                delete_task(ssm_client, maintenance_window['WindowId'], task['WindowTaskId'])
+                delete_task(ssm_client, maint_window['WindowId'], task['WindowTaskId'])
             else:
                 logging.info('Task %s has TaskArn %s',
                              task['WindowTaskId'], task['TaskArn'])
         # Re-fetch the Tasks for this Maintenance Window
-        tasks = get_maintenance_window_tasks(ssm_client, maintenance_window['WindowId'])
+        tasks = helpers.get_items(client=ssm_client,
+                                  function='describe_maintenance_window_tasks',
+                                  item_name='Tasks',
+                                  WindowId=maint_window['WindowId'])
         tasks_number = sum(1 for task in tasks)
         logging.info('Number of tasks remaining for Maintenance Window %s: %s',
-                     maintenance_window['WindowId'], tasks_number)
+                     maint_window['WindowId'], tasks_number)
         # If no Tasks remain for this Maintenance Window, delete it
         if tasks_number == 0:
-            delete_maintenance_window(ssm_client, maintenance_window['WindowId'])
+            delete_maintenance_window(ssm_client, maint_window['WindowId'])
 
     # Iterate through Patch Groups; Deregister baselines
-    for patch_group in get_patch_groups(ssm_client):
+    for patch_group in helpers.get_items(client=ssm_client,
+                                         function='describe_patch_groups',
+                                         item_name='Mappings'):
         deregister_baseline(ssm_client,
                             patch_group['PatchGroup'],
                             patch_group['BaselineIdentity']['BaselineId'])
 
     # Iterate through Baselines
-    for baseline in get_baselines(ssm_client):
+    for baseline in helpers.get_items(client=ssm_client,
+                                      function='describe_patch_baselines',
+                                      item_name='BaselineIdentities'):
         logging.info('Considering Patch Baseline %s', baseline['BaselineId'])
         # If this is not a Default Baseline, delete it
         if not baseline['DefaultBaseline']:
@@ -90,43 +104,6 @@ def parse_args():
                         help='Logging/output verbosity')
     return parser.parse_args()
 
-def get_maintenance_windows(ssm_client):
-    """Yield SSM Maintenance Windows."""
-    next_token = True
-    filters = {'Key':'Enabled', 'Values':['true']}
-    while next_token:
-        if next_token is not True:
-            maint_window_list = ssm_client.describe_maintenance_windows(
-                Filters=[filters],
-                NextToken=next_token)
-        else:
-            maint_window_list = ssm_client.describe_maintenance_windows(
-                Filters=[filters])
-        if 'NextToken' in maint_window_list:
-            next_token = maint_window_list['NextToken']
-        else:
-            next_token = False
-        for window in maint_window_list['WindowIdentities']:
-            yield window
-
-def get_maintenance_window_tasks(ssm_client, maint_window_id):
-    """Yield Maintenance Window Tasks."""
-    next_token = True
-    while next_token:
-        if next_token is not True:
-            task_list = ssm_client.describe_maintenance_window_tasks(
-                WindowId=maint_window_id,
-                NextToken=next_token)
-        else:
-            task_list = ssm_client.describe_maintenance_window_tasks(
-                WindowId=maint_window_id)
-        if 'NextToken' in task_list:
-            next_token = task_list['NextToken']
-        else:
-            next_token = False
-        for task in task_list['Tasks']:
-            yield task
-
 def delete_task(ssm_client, maint_window_id, task_id):
     """Delete Maintenance Window Task."""
     response = ssm_client.deregister_task_from_maintenance_window(WindowId=maint_window_id,
@@ -145,21 +122,6 @@ def delete_maintenance_window(ssm_client, maint_window_id):
     else:
         logging.error('Failed to delete Maintenance Window %s', maint_window_id)
 
-def get_patch_groups(ssm_client):
-    """Yield Patch Groups."""
-    next_token = True
-    while next_token:
-        if next_token is not True:
-            patch_group_list = ssm_client.describe_patch_groups(NextToken=next_token)
-        else:
-            patch_group_list = ssm_client.describe_patch_groups()
-        if 'NextToken' in patch_group_list:
-            next_token = patch_group_list['NextToken']
-        else:
-            next_token = False
-        for patch_group in patch_group_list['Mappings']:
-            yield patch_group
-
 def deregister_baseline(ssm_client, patch_group, baseline):
     """Deregister Baseline for Patch Group."""
     response = ssm_client.deregister_patch_baseline_for_patch_group(BaselineId=baseline,
@@ -168,21 +130,6 @@ def deregister_baseline(ssm_client, patch_group, baseline):
         print("Deregistered Baseline {0} for Patch Group {1}".format(baseline, patch_group))
     else:
         logging.error('Failed to deregister Baseline %s for Patch Group %s', baseline, patch_group)
-
-def get_baselines(ssm_client):
-    """Yield Patch Baselines."""
-    next_token = True
-    while next_token:
-        if next_token is not True:
-            baseline_list = ssm_client.describe_patch_baselines(NextToken=next_token)
-        else:
-            baseline_list = ssm_client.describe_patch_baselines()
-        if 'NextToken' in baseline_list:
-            next_token = baseline_list['NextToken']
-        else:
-            next_token = False
-        for baseline in baseline_list['BaselineIdentities']:
-            yield baseline
 
 def delete_baseline(ssm_client, baseline):
     """Delete a Patch Baseline."""
